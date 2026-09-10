@@ -15,7 +15,6 @@ import (
 	"time"
 
 	surveyCore "github.com/AlecAivazis/survey/v2/core"
-	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/cli/cli/v2/api"
 	"github.com/cli/cli/v2/internal/agents"
 	"github.com/cli/cli/v2/internal/build"
@@ -50,6 +49,8 @@ const (
 )
 
 func Main() exitCode {
+	installPlatformNetworking()
+
 	buildDate := build.Date
 	buildVersion := build.Version
 	hasDebug, _ := utils.IsDebugEnabled()
@@ -201,7 +202,7 @@ func Main() exitCode {
 		} else if err == cmdutil.PendingError {
 			return exitPending
 		} else if cmdutil.IsUserCancellation(err) {
-			if errors.Is(err, terminal.InterruptErr) {
+			if errors.Is(err, cmdutil.InterruptErr) {
 				// ensure the next shell prompt will start on its own line
 				fmt.Fprint(stderr, "\n")
 			}

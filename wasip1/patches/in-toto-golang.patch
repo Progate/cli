@@ -1,0 +1,45 @@
+diff --git a/vendor/github.com/in-toto/in-toto-golang/in_toto/util_unix.go b/vendor/github.com/in-toto/in-toto-golang/in_toto/util_unix.go
+--- a/vendor/github.com/in-toto/in-toto-golang/in_toto/util_unix.go
++++ b/vendor/github.com/in-toto/in-toto-golang/in_toto/util_unix.go
+@@ -1,5 +1,6 @@
+-//go:build linux || darwin || !windows
++//go:build (linux || darwin || !windows) && !wasip1
+ // +build linux darwin !windows
++// +build !wasip1
+ 
+ package in_toto
+ 
+diff --git a/vendor/github.com/in-toto/in-toto-golang/in_toto/util_wasip1.go b/vendor/github.com/in-toto/in-toto-golang/in_toto/util_wasip1.go
+new file mode 100644
+--- /dev/null
++++ b/vendor/github.com/in-toto/in-toto-golang/in_toto/util_wasip1.go
+@@ -0,0 +1,29 @@
++//go:build wasip1
++
++package in_toto
++
++import "os"
++
++// wasip1 has no access(2): WASI preview1 has no notion of the current user, so
++// there is nothing to test permissions against. Asking the filesystem whether
++// the path can be opened for writing answers the same question the caller has.
++func isWritable(path string) error {
++	info, err := os.Stat(path)
++	if err != nil {
++		return err
++	}
++	if info.IsDir() {
++		f, err := os.CreateTemp(path, ".in-toto-writable-*")
++		if err != nil {
++			return err
++		}
++		name := f.Name()
++		_ = f.Close()
++		return os.Remove(name)
++	}
++	f, err := os.OpenFile(path, os.O_WRONLY, 0)
++	if err != nil {
++		return err
++	}
++	return f.Close()
++}

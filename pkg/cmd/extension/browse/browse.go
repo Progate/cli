@@ -1,3 +1,5 @@
+//go:build !wasip1
+
 package browse
 
 import (
@@ -5,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -13,35 +14,13 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/charmbracelet/glamour"
 	"github.com/cli/cli/v2/git"
-	"github.com/cli/cli/v2/internal/gh"
 	"github.com/cli/cli/v2/internal/ghrepo"
-	"github.com/cli/cli/v2/pkg/extensions"
-	"github.com/cli/cli/v2/pkg/iostreams"
 	"github.com/cli/cli/v2/pkg/search"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/spf13/cobra"
 )
 
 const pagingOffset = 24
-
-type ExtBrowseOpts struct {
-	Cmd          *cobra.Command
-	Browser      ibrowser
-	IO           *iostreams.IOStreams
-	Searcher     search.Searcher
-	Em           extensions.ExtensionManager
-	Client       *http.Client
-	Logger       *log.Logger
-	Cfg          gh.Config
-	Rg           *readmeGetter
-	Debug        bool
-	SingleColumn bool
-}
-
-type ibrowser interface {
-	Browse(string) error
-}
 
 type uiRegistry struct {
 	// references to some of the heavily cross-referenced tview primitives. Not

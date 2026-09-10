@@ -13,11 +13,9 @@ import (
 	aliasCmd "github.com/cli/cli/v2/pkg/cmd/alias"
 	"github.com/cli/cli/v2/pkg/cmd/alias/shared"
 	apiCmd "github.com/cli/cli/v2/pkg/cmd/api"
-	attestationCmd "github.com/cli/cli/v2/pkg/cmd/attestation"
 	authCmd "github.com/cli/cli/v2/pkg/cmd/auth"
 	browseCmd "github.com/cli/cli/v2/pkg/cmd/browse"
 	cacheCmd "github.com/cli/cli/v2/pkg/cmd/cache"
-	codespaceCmd "github.com/cli/cli/v2/pkg/cmd/codespace"
 	completionCmd "github.com/cli/cli/v2/pkg/cmd/completion"
 	configCmd "github.com/cli/cli/v2/pkg/cmd/config"
 	copilotCmd "github.com/cli/cli/v2/pkg/cmd/copilot"
@@ -59,6 +57,13 @@ type AuthError struct {
 
 func (ae *AuthError) Error() string {
 	return ae.err.Error()
+}
+
+// addOptional registers a command a build may not have (see optional_commands.go).
+func addOptional(parent *cobra.Command, cmd *cobra.Command) {
+	if cmd != nil {
+		parent.AddCommand(cmd)
+	}
 }
 
 func NewCmdRoot(f *cmdutil.Factory, telemetry ghtelemetry.CommandRecorder, version, buildDate string) (*cobra.Command, error) {
@@ -137,7 +142,7 @@ func NewCmdRoot(f *cmdutil.Factory, telemetry ghtelemetry.CommandRecorder, versi
 	cmd.AddCommand(actionsCmd.NewCmdActions(f))
 	cmd.AddCommand(aliasCmd.NewCmdAlias(f))
 	cmd.AddCommand(authCmd.NewCmdAuth(f))
-	cmd.AddCommand(attestationCmd.NewCmdAttestation(f))
+	addOptional(cmd, attestationCommand(f))
 	cmd.AddCommand(configCmd.NewCmdConfig(f))
 	cmd.AddCommand(gistCmd.NewCmdGist(f))
 	cmd.AddCommand(gpgKeyCmd.NewCmdGPGKey(f))
@@ -147,7 +152,7 @@ func NewCmdRoot(f *cmdutil.Factory, telemetry ghtelemetry.CommandRecorder, versi
 	cmd.AddCommand(secretCmd.NewCmdSecret(f))
 	cmd.AddCommand(variableCmd.NewCmdVariable(f))
 	cmd.AddCommand(sshKeyCmd.NewCmdSSHKey(f))
-	cmd.AddCommand(codespaceCmd.NewCmdCodespace(f))
+	addOptional(cmd, codespaceCommand(f))
 	cmd.AddCommand(projectCmd.NewCmdProject(f))
 	cmd.AddCommand(previewCmd.NewCmdPreview(f))
 	cmd.AddCommand(skillsCmd.NewCmdSkills(f, telemetry))

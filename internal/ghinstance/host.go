@@ -33,14 +33,13 @@ func isGarage(h string) bool {
 	return strings.EqualFold(h, "garage.github.com")
 }
 
+// HostnameValidator checks a hostname the user typed. What counts as valid
+// depends on the build: see hostname_rules.go and its wasip1 twin.
 func HostnameValidator(hostname string) error {
 	if len(strings.TrimSpace(hostname)) < 1 {
 		return errors.New("a value is required")
 	}
-	if strings.ContainsRune(hostname, '/') || strings.ContainsRune(hostname, ':') {
-		return errors.New("invalid hostname")
-	}
-	return nil
+	return validateHostname(hostname)
 }
 
 func GraphQLEndpoint(hostname string) string {

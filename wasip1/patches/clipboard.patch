@@ -1,0 +1,29 @@
+diff --git a/vendor/github.com/atotto/clipboard/clipboard_wasip1.go b/vendor/github.com/atotto/clipboard/clipboard_wasip1.go
+new file mode 100644
+--- /dev/null
++++ b/vendor/github.com/atotto/clipboard/clipboard_wasip1.go
+@@ -0,0 +1,24 @@
++//go:build wasip1
++
++package clipboard
++
++import "errors"
++
++// A WebAssembly guest has no clipboard: the browser owns it, and reaching it
++// needs a user gesture on the page, which a process running in a worker cannot
++// produce. Unsupported is set so callers print their own fallback (gh shows the
++// code and asks the user to copy it) instead of failing.
++
++var errUnsupported = errors.New("clipboard: not available in WebAssembly")
++
++func init() {
++	Unsupported = true
++}
++
++func readAll() (string, error) {
++	return "", errUnsupported
++}
++
++func writeAll(string) error {
++	return errUnsupported
++}

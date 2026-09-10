@@ -3,8 +3,6 @@ package cmdutil
 import (
 	"errors"
 	"fmt"
-
-	"github.com/AlecAivazis/survey/v2/terminal"
 )
 
 // FlagErrorf returns a new FlagError that wraps an error produced by
@@ -41,7 +39,7 @@ var CancelError = errors.New("CancelError")
 var PendingError = errors.New("PendingError")
 
 func IsUserCancellation(err error) bool {
-	return errors.Is(err, CancelError) || errors.Is(err, terminal.InterruptErr)
+	return errors.Is(err, CancelError) || errors.Is(err, InterruptErr)
 }
 
 func MutuallyExclusive(message string, conditions ...bool) error {

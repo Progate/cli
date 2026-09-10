@@ -1,0 +1,11 @@
+diff --git a/vendor/github.com/muesli/termenv/termenv_other.go b/vendor/github.com/muesli/termenv/termenv_other.go
+--- a/vendor/github.com/muesli/termenv/termenv_other.go
++++ b/vendor/github.com/muesli/termenv/termenv_other.go
+@@ -1,5 +1,5 @@
+-//go:build js || plan9 || aix
+-// +build js plan9 aix
++//go:build js || plan9 || aix || wasip1
++// +build js plan9 aix wasip1
+ 
+ package termenv
+ 

@@ -1,3 +1,5 @@
+//go:build !wasip1
+
 package surveyext
 
 // This file extends survey.Editor to give it more flexible behavior. For more context, read
