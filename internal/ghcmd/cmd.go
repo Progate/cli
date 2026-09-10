@@ -49,7 +49,7 @@ const (
 )
 
 func Main() exitCode {
-	installPlatformNetworking()
+	installPlatformRuntime()
 
 	buildDate := build.Date
 	buildVersion := build.Version

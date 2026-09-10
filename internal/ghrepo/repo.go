@@ -68,7 +68,7 @@ func FromURL(u *url.URL) (Interface, error) {
 		return nil, fmt.Errorf("invalid path: %s", u.Path)
 	}
 
-	return NewWithHost(parts[0], strings.TrimSuffix(parts[1], ".git"), u.Hostname()), nil
+	return NewWithHost(parts[0], strings.TrimSuffix(parts[1], ".git"), hostFromURL(u)), nil
 }
 
 func normalizeHostname(h string) string {

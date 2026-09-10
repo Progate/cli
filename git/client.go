@@ -10,14 +10,12 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
-	"runtime"
 	"slices"
 	"sort"
 	"strings"
 	"sync"
 
 	"github.com/cli/cli/v2/internal/ghinstance"
-	"github.com/cli/safeexec"
 )
 
 // MergeBaseConfig is the configuration setting to keep track of the PR target branch.
@@ -891,24 +889,6 @@ func (c *Client) Clone(ctx context.Context, cloneURL string, args []string, mods
 		return "", err
 	}
 	return target, nil
-}
-
-func resolveGitPath() (string, error) {
-	path, err := safeexec.LookPath("git")
-	if err != nil {
-		if errors.Is(err, exec.ErrNotFound) {
-			programName := "git"
-			if runtime.GOOS == "windows" {
-				programName = "Git for Windows"
-			}
-			return "", &NotInstalled{
-				message: fmt.Sprintf("unable to find git executable in PATH; please install %s before retrying", programName),
-				err:     err,
-			}
-		}
-		return "", err
-	}
-	return path, nil
 }
 
 func isFilesystemPath(p string) bool {
