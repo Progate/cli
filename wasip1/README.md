@@ -61,10 +61,31 @@ dot, and passwords echo (the guest cannot turn echo off, so the prompt says so).
 | `gh codespace` | terminal UI (tcell) and an SSH tunnel |
 | `gh attestation` | sigstore's trust root, and tens of megabytes |
 | `gh ext browse` | full-screen tview UI. `gh ext search` still works |
-| anything that runs `git` or an editor | wasip1 has no `fork`/`exec` |
+| an editor (`$EDITOR`) | wasip1 has no `fork`/`exec`; only `git` goes through the hook below |
 
 Dropping the first three is also what keeps tcell, dev-tunnels, bubbletea and
 survey out of the module, so those never have to be taught about wasip1.
+
+## Child processes (git)
+
+wasip1 has no `fork` or `exec`, so `os/exec` cannot start anything. BrowserOS
+supplies the missing calls as host functions with their POSIX shapes - `pipe2`,
+`posix_spawnp`, `waitpid` and `kill` - and `internal/browseros` uses them the way
+`os/exec` does on Unix (gh reaches it through its `run.PrepareCmd` hook):
+
+| The command's `Stdin` / `Stdout` / `Stderr` | What the child gets |
+| --- | --- |
+| `nil` | `/dev/null` |
+| an `*os.File` (the terminal, a file) | that fd itself, so `git push` talks to the terminal directly |
+| any other `Reader` / `Writer` | a kernel pipe, copied by a goroutine |
+
+The working directory is passed with `posix_spawn_file_actions_addchdir`, since
+it belongs to the guest (BrowserOS does not see our `chdir`). Waiting asks
+`waitpid` with `WNOHANG` and sleeps in between: a blocking `waitpid` would stop the
+whole module (no threads), including the goroutine feeding the child's stdin.
+
+This needs a BrowserOS that has `posix_spawnp` (`@progate/browser-os` 2.11.0 or
+later); on an older one the module does not instantiate.
 
 ## Dependency patches
 
