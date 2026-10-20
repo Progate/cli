@@ -31,12 +31,15 @@ module - wasip1 has no threads), and hands the fd to `net/http` as a `net.Conn`.
 `Main` installs it as `http.DefaultTransport`, which is what go-gh builds its
 client on.
 
-**TLS is the host's job.** A browser cannot open a raw TCP connection, so
-BrowserOS reaches the outside through a gateway that speaks `fetch()`, and that
-gateway is what terminates TLS: it treats port 443 as https. So the guest writes
-plain HTTP/1.1 to port 443 and lets the host wrap it. Wrapping it here instead
-would hand the gateway bytes it cannot read - and wasip1 has no root
-certificates to verify with anyway.
+**TLS is real.** `https://` goes through `crypto/tls` over the same socket, and
+the server's certificate is verified against the system roots. On wasip1
+`crypto/x509` has no default places to look (`root_wasm.go`), so
+`internal/browseros` searches the Linux list itself, starting with
+`/etc/ssl/certs/ca-certificates.crt`; `SSL_CERT_FILE` and `SSL_CERT_DIR` work as
+they do on Linux. A browser cannot open a raw TCP connection, so BrowserOS takes
+every outgoing connection to port 443 to its egress proxy, which answers with a
+certificate from a CA made for that BrowserOS and put in that bundle, and hands
+the decrypted request to the host's `fetch()`. gh sees an ordinary TLS server.
 
 ## Hosts may carry a port
 
@@ -44,7 +47,10 @@ certificates to verify with anyway.
 The interesting server in a browser is usually one the user just started next
 door, on whatever port it was given, and without a port there would be no way to
 name it. A host with a port is not `github.com`, so the rest of gh already treats
-it as GitHub Enterprise and asks `/api/v3/` and `/api/graphql`.
+it as GitHub Enterprise and asks `https://host:port/api/v3/` and
+`https://host:port/api/graphql` - over TLS, like any GitHub Enterprise host. The
+server needs a certificate the system roots trust; inside BrowserOS,
+`browseros-cert <name>` issues one.
 
 ## Prompts are line-based
 
