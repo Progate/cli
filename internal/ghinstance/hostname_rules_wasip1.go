@@ -19,7 +19,9 @@ import (
 // The rest of gh needs no changes for this: a host with a port is not
 // github.com, so gh treats it as GitHub Enterprise and asks
 // https://host:port/api/v3/ and https://host:port/api/graphql, and the wasip1
-// transport (internal/browseros) keeps that port when it opens the socket.
+// transport (internal/browseros) keeps that port when it opens the socket. That
+// is TLS, as for any GitHub Enterprise host, so the server needs a certificate
+// the system roots trust.
 func validateHostname(hostname string) error {
 	if strings.ContainsRune(hostname, '/') {
 		return errors.New("invalid hostname")
