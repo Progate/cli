@@ -43,10 +43,21 @@ import (
 // 0 (on Linux they do not return at all), which is how the child knows its part
 // is over. clone(2) then returns the child's pid to us, as it does on Linux.
 
-// syscall(nr, a0..a5): non-negative on success, -errno (the Linux value) on failure.
+// syscall(nr, a0..a5). The answer is in the low 32 bits of the i64 (see
+// resultOf); the high 32 bits are the kernel's to use.
 //
 //go:wasmimport browser_os_linux syscall
-func linuxSyscall(nr int32, a0, a1, a2, a3, a4, a5 int64) int64
+func rawLinuxSyscall(nr int32, a0, a1, a2, a3, a4, a5 int64) int64
+
+// linuxSyscall makes a system call and returns its result: non-negative on
+// success, -errno (the Linux value) on failure.
+//
+// It runs in the child's part of clone(2) too, so it must not grow the stack.
+//
+//go:nosplit
+func linuxSyscall(nr int32, a0, a1, a2, a3, a4, a5 int64) int64 {
+	return resultOf(rawLinuxSyscall(nr, a0, a1, a2, a3, a4, a5))
+}
 
 // The child's part of clone(2). BrowserOS calls it while clone(2) runs; it must
 // not be called otherwise.

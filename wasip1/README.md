@@ -80,6 +80,9 @@ riscv32 Linux's numbers and errno values), and `internal/browseros` starts a
 child the way Go's `os/exec` does on Linux: `pipe2`, `clone` with
 `CLONE_VM|CLONE_VFORK`, `dup3`/`close`/`openat`/`chdir` in the child, `execve`,
 then `waitid` and `kill` (gh reaches it through its `run.PrepareCmd` hook).
+The import returns an i64 whose low 32 bits are the system call's result (a
+riscv32 `long`, not sign-extended) and whose high 32 bits BrowserOS keeps for
+itself, so the result is read as the low half only.
 
 A wasm module cannot run two flows on one stack, so BrowserOS runs the child's
 part by calling the export `__browseros_clone_child_return` during `clone`. In
