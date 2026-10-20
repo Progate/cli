@@ -69,9 +69,17 @@ survey out of the module, so those never have to be taught about wasip1.
 ## Child processes (git)
 
 wasip1 has no `fork` or `exec`, so `os/exec` cannot start anything. BrowserOS
-supplies the missing calls as host functions with their POSIX shapes - `pipe2`,
-`posix_spawnp`, `waitpid` and `kill` - and `internal/browseros` uses them the way
-`os/exec` does on Unix (gh reaches it through its `run.PrepareCmd` hook):
+takes the Linux system calls through one import (`browser_os_linux.syscall`, with
+riscv32 Linux's numbers and errno values), and `internal/browseros` starts a
+child the way Go's `os/exec` does on Linux: `pipe2`, `clone` with
+`CLONE_VM|CLONE_VFORK`, `dup3`/`close`/`openat`/`chdir` in the child, `execve`,
+then `waitid` and `kill` (gh reaches it through its `run.PrepareCmd` hook).
+
+A wasm module cannot run two flows on one stack, so BrowserOS runs the child's
+part by calling the export `__browseros_clone_child_return` during `clone`. In
+there, a successful `execve` or `exit` returns 0 (on Linux they never return),
+which ends the child's part; `clone` then returns the child's pid. A name
+without a slash is looked up on our `PATH` the way `execvp(3)` does.
 
 | The command's `Stdin` / `Stdout` / `Stderr` | What the child gets |
 | --- | --- |
@@ -79,13 +87,13 @@ supplies the missing calls as host functions with their POSIX shapes - `pipe2`,
 | an `*os.File` (the terminal, a file) | that fd itself, so `git push` talks to the terminal directly |
 | any other `Reader` / `Writer` | a kernel pipe, copied by a goroutine |
 
-The working directory is passed with `posix_spawn_file_actions_addchdir`, since
-it belongs to the guest (BrowserOS does not see our `chdir`). Waiting asks
-`waitpid` with `WNOHANG` and sleeps in between: a blocking `waitpid` would stop the
-whole module (no threads), including the goroutine feeding the child's stdin.
+The child changes to the command's directory with `chdir`, since Go keeps its
+working directory to itself on wasip1. Waiting asks `waitid` with `WNOHANG` and
+sleeps in between: a blocking wait would stop the whole module (no threads),
+including the goroutine feeding the child's stdin.
 
-This needs a BrowserOS that has `posix_spawnp` (`@progate/browser-os` 2.11.0 or
-later); on an older one the module does not instantiate.
+This needs a BrowserOS that takes the Linux system calls (`browser_os_linux`);
+on an older one the module does not instantiate.
 
 ## Dependency patches
 

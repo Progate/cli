@@ -83,7 +83,7 @@ func (r *runnable) run(stdin io.Reader, stdout, stderr io.Writer) (int, error) {
 	if file == "" {
 		file = argv[0]
 	}
-	// exec.Cmd: a nil Env means the child inherits ours. posix_spawnp's envp is
+	// exec.Cmd: a nil Env means the child inherits ours. execve's envp is
 	// the child's whole environment, so pass ours explicitly.
 	env := r.cmd.Env
 	if env == nil {
@@ -267,11 +267,11 @@ func (e *exitError) ExitCode() int {
 	return e.status.ExitCode()
 }
 
-// LookPathHint says what to use as the program name. posix_spawnp resolves
-// names against PATH when it starts a process (as execvp(3) does), so gh does
-// not need to find git on disk first - and it could not, since the executables
-// a BrowserOS carries are entries in the kernel's table rather than files with
-// an executable bit.
+// LookPathHint says what to use as the program name. Spawn resolves names
+// against PATH when it starts a process (by trying execve(2) on each entry, as
+// execvp(3) does), so gh does not need to find git on disk first - and it could
+// not, since the executables a BrowserOS carries are entries in the kernel's
+// table rather than files with an executable bit.
 func LookPathHint(name string) (string, error) {
 	if !CanSpawn() {
 		return "", fmt.Errorf("BrowserOS was started without child processes, so %s cannot be run", name)
