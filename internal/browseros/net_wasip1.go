@@ -26,15 +26,14 @@
 // would ever complete. Marking the fd non-blocking makes Go register it with the
 // poller (poll_oneoff), which parks only the reading goroutine.
 //
-// # Why TLS is not spoken here
+// # TLS
 //
-// The browser cannot open a raw TCP connection, so BrowserOS reaches the outside
-// through a gateway that speaks fetch(), and that gateway is the one that
-// terminates TLS: it treats port 443 as https. A guest that wrapped the socket in
-// crypto/tls would hand the gateway bytes it cannot read (and wasip1 has no root
-// certificates anyway). gh therefore writes plain HTTP/1.1 to port 443 and lets
-// the host put it in an https request - the same choice browser-php made for its
-// https:// stream wrapper.
+// https is real TLS, spoken by crypto/tls over the socket Dial returns (see
+// DialTLS). The browser cannot open a raw TCP connection, so a connection to an
+// outside host on port 443 is taken by BrowserOS' egress proxy, which presents
+// a certificate issued by the CA of that BrowserOS. That CA is in the system
+// bundle (/etc/ssl/certs/ca-certificates.crt), so gh verifies it like any other
+// server; a server inside BrowserOS is verified the same way.
 package browseros
 
 import (
@@ -73,8 +72,9 @@ func Dial(_ context.Context, network, address string) (net.Conn, error) {
 	if err != nil {
 		return nil, &net.OpError{Op: "dial", Net: network, Err: err}
 	}
-	// The host keeps the name all the way to the gateway: Host, SNI and CORS are
-	// all decided by name, so resolving to an address here would lose it.
+	// The host keeps the name all the way to the other side: the socket table
+	// and the gateway decide by name, so resolving to an address here would
+	// lose it.
 	host = strings.Trim(host, "[]")
 	if host == "" || strings.Contains(host, "/") {
 		return nil, &net.OpError{Op: "dial", Net: network, Err: fmt.Errorf("browseros: cannot dial %q", address)}
